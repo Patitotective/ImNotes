@@ -27,11 +27,9 @@ type
     title*: string
     text*: string
 
-  Page* = seq[Note]
-
   Book* = object
     title*: string
-    pages*: seq[Page]
+    notes*: seq[Note]
 
   App* = ref object
     win*: GLFWWindow
@@ -39,11 +37,15 @@ type
     prefs*: Prefs
     cache*: TomlValueRef # Settings cache
     config*: TomlValueRef # Prefs table
+    lastClipboard*: string
 
+    selected*: seq[int] # Index of the notes selected
+    selecting*: bool
+    trash*: Book
+    prevPage*: int
     books*: seq[Book]
-    currentBook*, currentPage*: int
     dragSource*: int # Index of the note being dragged
-    activeTitle*: int # Index of the note whose title's input text is active
+    currentPage*, currentBook*: int
 
 proc `+`*(vec1, vec2: ImVec2): ImVec2 = 
   ImVec2(x: vec1.x + vec2.x, y: vec1.y + vec2.y)
@@ -91,6 +93,8 @@ proc igVec4*(x, y, z, w: float32): ImVec4 = ImVec4(x: x, y: y, z: z, w: w)
 
 proc igVec4*(color: Color): ImVec4 = ImVec4(x: color.r, y: color.g, z: color.b, w: color.a)
 
+proc igRect*(min, max: ImVec2): ImRect = ImRect(min: min, max: max)
+
 proc igHSV*(h, s, v: float32, a: float32 = 1f): ImColor = 
   result.addr.hSVNonUDT(h, s, v, a)
 
@@ -123,6 +127,9 @@ proc igGetItemRectSize*(): ImVec2 =
 
 proc igColorConvertU32ToFloat4*(color: uint32): ImVec4 = 
   igColorConvertU32ToFloat4NonUDT(result.addr, color)
+
+proc igGetMouseDragDelta*(button = 0.ImGuiMouseButton, lock_threshold = -1f): ImVec2 = 
+  igGetMouseDragDeltaNonUDT(result.addr, button, lock_threshold)
 
 proc getCenter*(self: ptr ImGuiViewport): ImVec2 = 
   getCenterNonUDT(result.addr, self)
@@ -332,12 +339,19 @@ proc newString*(length: int, default: string): string =
   result = newString(length)
   result.pushString(default)
 
-proc cleanString*(str: string): string = 
+proc cleanString*(str: string, strip = true): string = 
   if '\0' in str:
-    str[0..<str.find('\0')].strip()
+    result = str[0..<str.find('\0')]
   else:
-    str.strip()
+    result = str
+
+  if strip:
+    result = result.strip()
 
 proc updatePrefs*(app: var App) = 
   # Update the values depending on the preferences here
   echo "Updating preferences..."
+
+proc expand*(bb: var ImRect, amount: float32) = bb.min.x -= amount; bb.min.y -= amount; bb.max.x += amount; bb.max.y += amount
+
+proc contains*(bb: ImRect, r: ImRect): bool = r.min.x >= bb.min.x and r.min.y >= bb.min.y and r.max.x <= bb.max.x and r.max.y <= bb.max.y

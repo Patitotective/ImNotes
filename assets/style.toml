@@ -1,6 +1,6 @@
 alpha = 1.0
 disabledAlpha = 0.4000000059604645
-windowPadding = [10.0, 10.0]
+windowPadding = [15.0, 15.0]
 windowRounding = 4.0
 windowBorderSize = 0.0
 windowMinSize = [50.0, 50.0]

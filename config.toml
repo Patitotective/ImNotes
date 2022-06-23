@@ -17,7 +17,7 @@ fontPath = "assets/ProggyVector Regular.ttf" # Other options are Roboto-Regular.
 fontSize = 16.0
 
 # Window
-minSize = [300, 300] # Width, height
+minSize = [400, 400] # Width, height
 
 # Settings for the preferences window
 [settings.maxNotes]
